@@ -1,0 +1,2 @@
+source D:/ESP32project/esp_hid_host/build_esp32/gdbinit/symbols
+source D:/ESP32project/esp_hid_host/build_esp32/gdbinit/connect

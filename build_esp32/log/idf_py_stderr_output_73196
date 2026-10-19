@@ -1,0 +1,7 @@
+Command: D:\Espressif\tools\python\v6.0.2\venv\Scripts\python.exe -m esptool -p COM24 -b 460800 --before default-reset --after hard-reset --chip esp32 erase-flash
+
+A fatal error occurred: Could not open COM24, the port is busy or doesn't exist.
+(could not open port 'COM24': FileNotFoundError(2, '系统找不到指定的文件。', None, 2))
+
+Hint: Check if the port is correct and ESP connected
+

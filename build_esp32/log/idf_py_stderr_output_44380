@@ -1,0 +1,14 @@
+Command: ninja flash
+
+A fatal error occurred: Could not open COM24, the port is busy or doesn't exist.
+(could not open port 'COM24': FileNotFoundError(2, '绯荤粺鎵句笉鍒版寚瀹氱殑鏂囦欢銆?, None, 2))
+
+Hint: Check if the port is correct and ESP connected
+
+CMake Error at D:/esp/v6.0.2/esp-idf/components/esptool_py/run_serial_tool.cmake:67 (message):
+  
+  D:/Espressif/tools/python/v6.0.2/venv/Scripts/python.exe;-m;esptool;--chip;esp32
+  failed.
+
+
+

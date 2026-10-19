@@ -1,0 +1,41 @@
+menu "HID Example Configuration"
+    config EXAMPLE_SSP_ENABLED
+        bool "Secure Simple Pairing"
+        depends on BT_CLASSIC_ENABLED
+        default y
+        help
+            This enables the Secure Simple Pairing. If disable this option,
+            Bluedroid will only support Legacy Pairing
+
+    config EXAMPLE_HID_HOST_ENABLED
+        bool "Enable Example HID Host"
+        depends on BT_NIMBLE_ENABLED
+        default y
+        select BT_NIMBLE_HID_SERVICE
+        help
+            This enables Nimble HID Host
+
+    config EXAMPLE_PEER_DEVICE_NAME
+        string "Target Device Name"
+        default "HID Mouse Example"
+        help
+            Use this option to set target device name to connect.
+
+    choice SCAN_TRANSPORT
+        prompt "Transport to scan"
+        default SCAN_TRANSPORT_CLASSIC
+        help
+            只扫描经典蓝牙或 BLE 其中一种，避免另一种设备的日志刷屏，
+            连接时也只会尝试选中的传输方式。
+            例如：Xbox 无线手柄走经典蓝牙；部分国产新手柄走 BLE。
+
+        config SCAN_TRANSPORT_CLASSIC
+            bool "Classic Bluetooth only"
+
+        config SCAN_TRANSPORT_BLE
+            bool "BLE only"
+
+        config SCAN_TRANSPORT_BOTH
+            bool "Both"
+    endchoice
+endmenu
