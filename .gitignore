@@ -19,6 +19,8 @@
 # Build artifacts and directories
 **/build/
 build/
+# 自定义命名的构建目录，例如 build_esp32/
+build*/
 *.o
 *.a
 *.out
@@ -76,3 +78,7 @@ Desktop.ini
 *.workspace # General workspace files, can be from various tools
 *.suo       # Visual Studio Solution User Options
 *.sln.docstates # Visual Studio
+
+# 本地工作区数据（不进版本库）
+.workbuddy/
+

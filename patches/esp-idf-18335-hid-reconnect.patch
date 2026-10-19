@@ -1,0 +1,36 @@
+Subject: [PATCH] bluedroid: restore bonded HID info on boot (ESP-IDF #18335)
+
+HID Host 在重启后不从 NVS 恢复已绑定设备的 HID 信息，导致重连被迫重走 SDP，
+在 sniff 省电模式下超时（OPEN ERROR: ERR_SDP / reject connect request from
+bonding device）。此外 bta_hh 的 HID_HostAddDev 成功路径没有置 status，
+BTC 层会当成失败把 added_devices 里的表项清掉（日志: Device does not exist in DB）。
+
+适用: ESP-IDF v6.0.2（其他版本请先确认上下文一致）
+套用: cd $IDF_PATH && git apply /path/to/esp-idf-18335-hid-reconnect.patch
+还原: cd $IDF_PATH && git apply -R /path/to/esp-idf-18335-hid-reconnect.patch
+
+--- a/components/bt/host/bluedroid/btc/profile/std/hid/btc_hh.c
++++ b/components/bt/host/bluedroid/btc/profile/std/hid/btc_hh.c
+@@ -1264,7 +1264,9 @@ void btc_hh_cb_handler(btc_msg_t *msg)
+             btc_hh_cb.status = BTC_HH_ENABLED;
+             BTC_TRACE_DEBUG("Loading added devices");
+             /* Add hid descriptors for already bonded hid devices*/
+-            // btc_storage_load_bonded_hid_info();
++            // IDFGH-17363 / issue #18335: 原先被注释掉，导致重启后不从 NVS 恢复 HID 设备信息，
++            // 重连时被迫重走 SDP（sniff 模式下超时）→ OPEN 失败。启用后重连直接复用描述符。
++            btc_storage_load_bonded_hid_info();
+         } else {
+             btc_hh_cb.status = BTC_HH_DISABLED;
+             BTC_TRACE_ERROR("Error, HH enabling failed, status = %d", p_data->status);
+--- a/components/bt/host/bluedroid/bta/hh/bta_hh_act.c
++++ b/components/bt/host/bluedroid/bta/hh/bta_hh_act.c
+@@ -957,6 +957,9 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
+                 if (HID_HostAddDev(p_dev_info->bda, p_dev_info->attr_mask, &dev_handle)\
+                         == HID_SUCCESS) {
+                     dev_info.handle   = dev_handle;
++                    /* IDFGH-17363 / issue #18335: 成功路径原来没置 status，
++                       BTC 层会当成失败把 added_devices 表项清掉 */
++                    dev_info.status   = BTA_HH_OK;
+ 
+ #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
+                     /* update DI information */

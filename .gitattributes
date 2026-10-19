@@ -1,0 +1,4 @@
+# 统一换行符，避免 Windows 上 clone 后 patch 因 CRLF 套用失败
+* text=auto
+*.patch text eol=lf
+*.md text eol=lf
