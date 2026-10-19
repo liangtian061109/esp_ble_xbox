@@ -1,12 +1,14 @@
 # esp_ble_xbox
 
-**ESP32 蓝牙 HID Host —— 直连 Xbox 无线手柄**
+**ESP32 蓝牙 HID Host —— 直连飞智手柄（Xbox 模式）**
 
 ![target](https://img.shields.io/badge/target-ESP32-red)
 ![esp-idf](https://img.shields.io/badge/ESP--IDF-v6.0.2-blue)
 ![license](https://img.shields.io/badge/license-Unlicense%20OR%20CC0--1.0-green)
 
-把 Xbox 无线手柄（以及大部分第三方兼容手柄）直接接到 ESP32 上：开机自动连接、断线自动重连、按键 / 摇杆 / 扳机 / 十字键实时解码成可读日志。
+把飞智手柄切到 Xbox 模式后直接接到 ESP32：开机自动连接、断线自动重连、按键 / 摇杆 / 扳机 / 十字键实时解码成可读日志。
+
+> **键位表是飞智手柄实测的。** 其他品牌 / 型号的 Xbox 模式手柄协议相通（都是 16 字节报告、ID 1），但**按键位序几乎各不相同**，直接套用会对不上，需要按[适配其他手柄](#适配其他手柄)重新对表。
 
 项目基于 ESP-IDF 官方示例 [`esp_hid_host`](https://github.com/espressif/esp-idf/tree/master/examples/bluetooth/esp_hid_host) 改写。官方示例适合演示，但直接拿来连手柄会连续踩坑——配对方式不对、空闲 10 秒掉线、复位后再也连不上。这些坑本项目都填了，并把结论写进文档：
 
@@ -64,7 +66,7 @@
 - **Bluedroid 协议栈**（本项目不走 NimBLE 的 Classic 路径）
 - 任意 ESP32 开发板 + USB 数据线即可，无需额外电路
 - 测试环境：ESP32-DevKitC（4 MB flash）、ESP-IDF **v6.0.2**、Windows 10 + VS Code ESP-IDF 插件
-- 测试手柄：Xbox 无线手柄（蓝牙版），`VID 0x045E / PID 0x02FD`，Report Map 334 字节，主输入报告 ID 1 长 16 字节
+- 测试手柄：**飞智手柄（Xbox 模式）**，切换到 Xbox 模式后自报 `VID 0x045E / PID 0x02FD`（即被识别为 Xbox Wireless Controller，系统看不出品牌），Report Map 334 字节，主输入报告 ID 1 长 16 字节
 
 > Xbox 360 手柄用的是微软私有 2.4 GHz 协议，不是蓝牙，本项目不支持。
 
@@ -105,7 +107,9 @@ git apply /path/to/esp_ble_xbox/patches/esp-idf-18335-hid-reconnect.patch
 I (10469) ESP_HIDH_DEMO: [1] a0:5a:5d:bb:a0:e6 | 外设/手柄 (COD 5/2) | RSSI -38 dBm | 名字:"Xbox Wireless Controller"
 ```
 
-> 手柄必须先进入配对模式才会被扫到：**按住顶部 USB-C 口旁的配对键约 3 秒，直到 Xbox 键快闪**。只开机、不按配对键时它不做 inquiry scan，扫不到很正常。
+> 飞智手柄在 Xbox 模式下也报 `Xbox Wireless Controller` 这个名字（VID/PID 直接用的微软的），所以**按地址认，别按名字认**——附近站着别人的 Xbox 手柄时名字会重名。
+
+> 手柄必须先进入配对模式才会被扫到：按住手柄的配对键约 3 秒，直到指示灯快闪。配对键位置各型号不同（多在背面或顶部的小圆钮，部分型号是组合键，看说明书）。只开机、不进配对模式时它不做 inquiry scan，扫不到很正常。
 
 ### 5. 填入地址并关闭诊断模式
 
@@ -190,7 +194,7 @@ LINK LOST, reconnecting in 2s (no reboot)...
 
 ## 键位表
 
-这套位序是逐键实测出来的，**不是标准 XInput 顺序**（第三方兼容手柄常见）：
+下表是**飞智手柄逐键实测**出来的位序。它**不是标准 XInput 顺序**，也不保证适用于其他品牌——同为 Xbox 模式，各家位序几乎都不一样：
 
 | bit | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 字节15.0 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -200,9 +204,11 @@ LINK LOST, reconnecting in 2s (no reboot)...
 
 - **A、B 之后空一位才是 X、Y**，`bit2` 是预留位。按 X 报成 Y、按 Y 报成 LB，就是忘了这一位。
 - **LB / RB 在 bit6 / bit7**，不是紧跟 Y。
-- **bit13 / bit14 同时是摇杆按下和背键 M1 / M2**——这类手柄把背键硬件并联在 L3 / R3 上，HID 报告只发同一个 bit，软件无法区分。
+- **bit13 / bit14 同时是摇杆按下和背键 M1 / M2**——飞智手柄（以及不少同类手柄）把背键硬件并联在 L3 / R3 上，HID 报告只发同一个 bit，软件无法区分。
 - **SELECT = bit11，START = 字节 15 的 bit0**。后者常被误当成 Xbox 引导键。
-- `bit2 / 5 / 8 / 9 / 10 / 12` 在这台手柄上按遍所有键都没有输出，基本可判定为空位。
+- `bit2 / 5 / 8 / 9 / 10 / 12` 在这把飞智手柄上按遍所有键都没有输出，基本可判定为空位。
+
+> 飞智不同型号（甚至同型号不同固件）的位序也可能有差异。换型号后先按一遍键，看日志打的是 `BITn` 还是错的键名，再改下表。
 
 改键位只需动一个数组（索引即 bit 号，`NULL` 表示未登记、日志会显示 `BITn`）：
 
@@ -260,6 +266,8 @@ git apply -R /path/to/esp_ble_xbox/patches/esp-idf-18335-hid-reconnect.patch
 
 ## 适配其他手柄
 
+换手柄（包括飞智的其他型号）时，先确认它工作在 Xbox 模式，再按下面三步对表：
+
 1. 把 `DUMP_REPORT_MAP` 设为 `1`，烧录后拿到完整 Report Map（HID 描述符），确认输入报告的 ID 和长度。
 2. 把 `DECODE_INPUT` 设为 `0`，逐个按键，观察哪些字节发生变化（日志会打印 `[索引] 旧值->新值`）。
 3. 按实测结果修改 `gamepad_decode()`（字节偏移）和 `s_btn_names`（位序），必要时调整 `STICK_DEADZONE` / `STICK_STEP` / `TRIGGER_STEP`。
@@ -300,9 +308,9 @@ esp_ble_xbox/
 
 ## 已知限制
 
-- **只支持经典蓝牙手柄**（Xbox One S / Series X|S 蓝牙版、以及兼容手柄）。Xbox 360 手柄不是蓝牙，不支持。
+- **只支持经典蓝牙手柄**（飞智手柄的 Xbox 模式、Xbox One S / Series X|S 蓝牙版等）。Xbox 360 手柄不是蓝牙，不支持；飞智手柄如果切在 2.4G 接收器或 Switch/PS 模式，也不走这套协议。
 - **手柄只记一个主机**：换主机（手机 / PC / ESP32）必须重新进入配对模式，这是手柄本身的行为。
-- **非标准键位需自行适配**：第三方手柄位序各不相同，见[适配其他手柄](#适配其他手柄)。
+- **键位表只对应飞智手柄**：其他品牌位序各不相同，见[适配其他手柄](#适配其他手柄)。
 - **背键无法单独识别**：若手柄把 M1/M2 硬件并联到 L3/R3，HID 层只有一个 bit。想区分只能在手柄配套 App 里改映射到别的键，但前提是该 App 能映射到手柄键位而不是键盘键（键盘映射在手柄模式下不生效）。
 - **只解码 ID 1 的 16 字节报告**，其他报告原样打印。
 - **保活报文可能影响个别手柄**（异常震动 / 灯效），可置 `KEEPALIVE_OUTPUT 0` 关闭。

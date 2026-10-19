@@ -86,7 +86,7 @@ while (1)
 
 ### 3.1 为什么要调 `BTA_DmBond()`
 
-ESP-IDF 没有「主动发起经典蓝牙配对」的公开 API，只有 `esp_bt_gap_pin_reply()` / `esp_bt_gap_ssp_confirm_reply()` 这类**应答**接口。而 Xbox 手柄的 HID 服务要求链路已认证 + 加密，等对端来发起配对往往等不到。
+ESP-IDF 没有「主动发起经典蓝牙配对」的公开 API，只有 `esp_bt_gap_pin_reply()` / `esp_bt_gap_ssp_confirm_reply()` 这类**应答**接口。而飞智手柄（Xbox 模式）的 HID 服务要求链路已认证 + 加密，等对端来发起配对往往等不到。
 
 `BTA_DmBond()` 是 Bluedroid 内部接口（`libbt.a` 里有符号），作用等同 Android 的 `createBond()`：
 
@@ -205,7 +205,7 @@ esp_log_level_set("BT_SDP", ESP_LOG_DEBUG);
 
 ### 7.1 首次配对
 
-1. 手柄长按配对键 3 秒到 Xbox 键快闪；
+1. 手柄长按配对键 3 秒到指示灯快闪；
 2. 烧录（不 erase）或复位 ESP32；
 3. 期望：`CONNECTING` → `BONDING` → `conn complete st 0x0` → `AUTH_CMPL stat:0x00 lk_type:4` → `OPEN: Usage: GAMEPAD`。
 4. 手柄应短震一次。
@@ -227,7 +227,7 @@ esp_log_level_set("BT_SDP", ESP_LOG_DEBUG);
 
 ### 7.4 输入完整性
 
-逐个按键、推摇杆到四个极限、把两个扳机按到底，对照 [PROTOCOL 的键位表](PROTOCOL.md#25-按键位表逐键实测)：
+逐个按键、推摇杆到四个极限、把两个扳机按到底，对照 [PROTOCOL 的键位表](PROTOCOL.md#25-按键位表飞智手柄实测)：
 
 - 每个键都应有独立的 `[DOWN]` / `[UP]`；
 - 摇杆应能打到接近 `±32768`；
@@ -279,7 +279,7 @@ PY
 - [ ] 电量读取（`ESP_HIDH_BATTERY_EVENT` 已有日志，可做成查询接口）
 - [ ] 把 `TARGET_BD_ADDR_STR` 等配置从编译期宏改为 NVS 存储（换手柄免重编）
 - [ ] 多手柄同时连接
-- [ ] BLE 手柄的标准解码（目前解码逻辑是 Xbox 经典蓝牙专用）
+- [ ] BLE 手柄的标准解码（目前解码逻辑是飞智手柄 Xbox 模式的报告专用）
 - [ ] `docs/` 补一份真实失败日志的完整时间线案例
 
 ## 10. 编码约定
